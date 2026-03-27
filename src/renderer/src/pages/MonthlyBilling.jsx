@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Save, Calculator, AlertCircle, Printer, Download } from "lucide-react";
 import ReceiptTemplate from "../components/ReceiptTemplate";
-import { generateReceiptPDF_v10 } from '../utils/pdfGenerator';
+import { generateReceiptPDF_v11 } from '../utils/pdfGenerator';
 
 const MonthlyBilling = () => {
     const [renters, setRenters] = useState([]);
@@ -75,7 +75,7 @@ const MonthlyBilling = () => {
             month: month,
             id: `TEMP-${r.id}-${month}`
         }));
-        await generateReceiptPDF_v10(calculatedBills, `RentReceipts_${month}.pdf`);
+        await generateReceiptPDF_v11(calculatedBills, `RentReceipts_${month}.pdf`);
     };
 
     const handleSave = async () => {
@@ -119,7 +119,7 @@ const MonthlyBilling = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Monthly Billing <span className="text-xs font-normal opacity-30">v10</span></h1>
+                    <h1 className="text-3xl font-bold">Monthly Billing <span className="text-xs font-normal opacity-30">v11</span></h1>
                     <p className="text-slate-500">Calculate and generate bills for the current month.</p>
                 </div>
                 <div className="flex items-center gap-4">

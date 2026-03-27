@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Printer, FileText, Download } from "lucide-react";
 import ReceiptModal from "../components/ReceiptModal";
 import ReceiptTemplate from "../components/ReceiptTemplate";
-import { generateReceiptPDF_v10 } from '../utils/pdfGenerator';
+import { generateReceiptPDF_v11 } from '../utils/pdfGenerator';
 
 const History = () => {
     const [history, setHistory] = useState([]);
@@ -32,7 +32,7 @@ const History = () => {
 
     const handleSavePDF = async () => {
         if (filteredHistory.length === 0) return;
-        await generateReceiptPDF_v10(filteredHistory, `RentReceipts_${month || "All"}.pdf`);
+        await generateReceiptPDF_v11(filteredHistory, `RentReceipts_${month || "All"}.pdf`);
     };
 
     return (

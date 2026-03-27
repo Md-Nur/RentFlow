@@ -1,10 +1,10 @@
 import { Printer, Download, X } from "lucide-react";
 import ReceiptTemplate from "./ReceiptTemplate";
-import { generateReceiptPDF_v10 } from '../utils/pdfGenerator';
+import { generateReceiptPDF_v11 } from '../utils/pdfGenerator';
 
 const ReceiptModal = ({ bill, onClose }) => {
     const exportPDF = async () => {
-        await generateReceiptPDF_v10(bill, `Receipt_${bill.name}_${bill.month}.pdf`);
+        await generateReceiptPDF_v11(bill, `Receipt_${bill.name}_${bill.month}.pdf`);
     };
 
     const handlePrint = () => {
