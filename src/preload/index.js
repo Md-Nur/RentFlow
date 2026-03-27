@@ -13,7 +13,10 @@ const api = {
     getBillingHistory: (month) => ipcRenderer.invoke("billing:getHistory", month),
 
     // Analytics
-    getSummary: () => ipcRenderer.invoke("analytics:getSummary")
+    getSummary: () => ipcRenderer.invoke("analytics:getSummary"),
+
+    // Utils
+    getFontData: () => ipcRenderer.invoke("billing:getFontData")
 };
 
 if (process.contextIsolated) {

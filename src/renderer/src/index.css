@@ -43,6 +43,12 @@ body {
       padding: 0 !important;
     }
 
+    .print-grid {
+      display: grid !important;
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
     .page-break {
       page-break-after: always;
       break-after: page;

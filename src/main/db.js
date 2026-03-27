@@ -6,15 +6,15 @@ import fs from "fs";
 let db;
 
 export function initDb() {
-    const userDataPath = app.getPath("userData");
-    const dbPath = join(userDataPath, "rentflow.db");
+  const userDataPath = app.getPath("userData");
+  const dbPath = join(userDataPath, "rentflow.db");
 
-    db = new Database(dbPath);
-    db.pragma("journal_mode = WAL");
+  db = new Database(dbPath);
+  db.pragma("journal_mode = WAL");
 
-    // Create Renters Table
-    db.prepare(
-        `
+  // Create Renters Table
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS renters (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -30,11 +30,11 @@ export function initDb() {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `
-    ).run();
+  ).run();
 
-    // Create Monthly Bills Table
-    db.prepare(
-        `
+  // Create Monthly Bills Table
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS monthly_bills (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       renter_id INTEGER REFERENCES renters(id) ON DELETE CASCADE,
@@ -54,12 +54,19 @@ export function initDb() {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `
-    ).run();
+  ).run();
 
-    console.log("Database initialized at:", dbPath);
+  // Add electricity_rate to monthly_bills if not exists
+  try {
+    db.prepare("ALTER TABLE monthly_bills ADD COLUMN electricity_rate REAL DEFAULT 0").run();
+  } catch (e) {
+    // Column already exists
+  }
+
+  console.log("Database initialized at:", dbPath);
 }
 
 export function getDb() {
-    if (!db) initDb();
-    return db;
+  if (!db) initDb();
+  return db;
 }

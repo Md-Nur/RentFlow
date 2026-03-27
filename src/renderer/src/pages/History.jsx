@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Printer, FileText } from "lucide-react";
+import { Search, Printer, FileText, Download } from "lucide-react";
 import ReceiptModal from "../components/ReceiptModal";
 import ReceiptTemplate from "../components/ReceiptTemplate";
+import { generateReceiptPDF_v10 } from '../utils/pdfGenerator';
 
 const History = () => {
     const [history, setHistory] = useState([]);
@@ -29,15 +30,27 @@ const History = () => {
         window.print();
     };
 
+    const handleSavePDF = async () => {
+        if (filteredHistory.length === 0) return;
+        await generateReceiptPDF_v10(filteredHistory, `RentReceipts_${month || "All"}.pdf`);
+    };
+
     return (
         <div className="space-y-6">
-            {/* Batch Print View (Only visible when printing) */}
             <div className="print-only">
-                {filteredHistory.map((bill, index) => (
-                    <div key={bill.id} className={index !== filteredHistory.length - 1 ? "page-break" : ""}>
-                        <ReceiptTemplate bill={bill} />
-                    </div>
-                ))}
+                {(() => {
+                    const pages = [];
+                    for (let i = 0; i < filteredHistory.length; i += 2) {
+                        pages.push(filteredHistory.slice(i, i + 2));
+                    }
+                    return pages.map((page, pageIndex) => (
+                        <div key={pageIndex} className={`page-break print-grid`}>
+                            {page.map((bill) => (
+                                <ReceiptTemplate key={bill.id} bill={bill} compact={true} />
+                            ))}
+                        </div>
+                    ));
+                })()}
             </div>
 
             <div className="flex items-center justify-between no-print">
@@ -47,13 +60,22 @@ const History = () => {
                 </div>
                 <div className="flex items-center gap-4">
                     {month && filteredHistory.length > 0 && (
-                        <button
-                            onClick={handleBatchPrint}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors shadow-sm"
-                        >
-                            <Printer size={18} />
-                            <span>Print All ({filteredHistory.length})</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleBatchPrint}
+                                className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"
+                            >
+                                <Printer size={18} />
+                                <span>Print All</span>
+                            </button>
+                            <button
+                                onClick={handleSavePDF}
+                                className="bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 shadow-sm"
+                            >
+                                <Download size={18} />
+                                <span>Save as PDF</span>
+                            </button>
+                        </div>
                     )}
                     <input
                         type="month"
@@ -95,7 +117,7 @@ const History = () => {
                                 <td className="px-6 py-4">{bill.room_number}</td>
                                 <td className="px-6 py-4 font-medium">{bill.name}</td>
                                 <td className="px-6 py-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
-                                    ৳{bill.total_bill.toLocaleString()}
+                                    ৳{(bill.total_bill || 0).toLocaleString()}
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                     <button
