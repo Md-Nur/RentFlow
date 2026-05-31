@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Save, Calculator, AlertCircle, Printer, Download } from "lucide-react";
+import { Save, Calculator, AlertCircle, Printer, Download, FileCode } from "lucide-react";
 import ReceiptTemplate from "../components/ReceiptTemplate";
 import { generateReceiptPDF_v11 } from '../utils/pdfGenerator';
+import { generateBillingHTML } from '../utils/htmlGenerator';
 
 const MonthlyBilling = () => {
     const [renters, setRenters] = useState([]);
@@ -78,6 +79,26 @@ const MonthlyBilling = () => {
         await generateReceiptPDF_v11(calculatedBills, `RentReceipts_${month}.pdf`);
     };
 
+    const handleSaveHTML = async () => {
+        if (renters.length === 0) return;
+        const calculatedBills = renters.map(r => ({
+            ...r,
+            ...calculateBill(r),
+            month: month,
+            id: `TEMP-${r.id}-${month}`
+        }));
+        const htmlContent = generateBillingHTML(calculatedBills);
+        const res = await window.api.saveHTML({
+            htmlContent,
+            filename: `RentReceipts_${month}.html`
+        });
+        if (res.success) {
+            alert(`HTML receipts exported successfully to:\n${res.filePath}`);
+        } else if (res.reason !== "cancelled") {
+            alert(`Failed to save HTML file: ${res.error || "Unknown error"}`);
+        }
+    };
+
     const handleSave = async () => {
         if (!confirm(`Are you sure you want to save bills for ${month}? This will update previous readings for next month.`)) return;
 
@@ -141,6 +162,15 @@ const MonthlyBilling = () => {
                             <span>Save as PDF</span>
                         </button>
                     )}
+                    {renters.length > 0 && (
+                        <button
+                            onClick={handleSaveHTML}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors"
+                        >
+                            <FileCode size={18} />
+                            <span>Save as HTML</span>
+                        </button>
+                    )}
                     <input
                         type="month"
                         className="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-indigo-500"
@@ -193,11 +223,11 @@ const MonthlyBilling = () => {
                         <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                             <th className="px-6 py-4 font-semibold text-sm">Room</th>
                             <th className="px-6 py-4 font-semibold text-sm">Prev Reading</th>
-                            <th className="px-6 py-4 font-semibold text-sm w-28">Curr Reading</th>
+                            <th className="px-3 py-4 font-semibold text-sm w-36">Curr Reading</th>
                             <th className="px-6 py-4 font-semibold text-sm text-right">Units</th>
-                            <th className="px-6 py-4 font-semibold text-sm w-24">Rate</th>
+                            <th className="px-3 py-4 font-semibold text-sm w-28">Rate</th>
                             <th className="px-6 py-4 font-semibold text-sm text-right">Elec Bill</th>
-                            <th className="px-6 py-4 font-semibold text-sm w-28">Prev Due</th>
+                            <th className="px-3 py-4 font-semibold text-sm w-36">Prev Due</th>
                             <th className="px-6 py-4 font-semibold text-sm text-right">Total Bill</th>
                         </tr>
                     </thead>
@@ -211,7 +241,7 @@ const MonthlyBilling = () => {
                                         <div className="text-xs text-slate-400 font-mono">{renter.room_number}</div>
                                     </td>
                                     <td className="px-6 py-4">{renter.previous_reading}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-3 py-4">
                                         <input
                                             type="number"
                                             className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-indigo-500"
@@ -220,7 +250,7 @@ const MonthlyBilling = () => {
                                         />
                                     </td>
                                     <td className="px-6 py-4 text-right">{calc.units_used}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-3 py-4">
                                         <input
                                             type="number"
                                             step="0.1"
@@ -230,7 +260,7 @@ const MonthlyBilling = () => {
                                         />
                                     </td>
                                     <td className="px-6 py-4 text-right">৳{calc.electricity_bill.toFixed(2)}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-3 py-4">
                                         <input
                                             type="number"
                                             className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-indigo-500"

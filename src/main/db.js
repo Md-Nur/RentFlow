@@ -51,6 +51,8 @@ export function initDb() {
       previous_due REAL DEFAULT 0,
       total_bill REAL,
       is_paid INTEGER DEFAULT 0,
+      amount_paid REAL DEFAULT 0,
+      payment_date TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `
@@ -59,6 +61,20 @@ export function initDb() {
   // Add electricity_rate to monthly_bills if not exists
   try {
     db.prepare("ALTER TABLE monthly_bills ADD COLUMN electricity_rate REAL DEFAULT 0").run();
+  } catch (e) {
+    // Column already exists
+  }
+
+  // Add amount_paid to monthly_bills if not exists
+  try {
+    db.prepare("ALTER TABLE monthly_bills ADD COLUMN amount_paid REAL DEFAULT 0").run();
+  } catch (e) {
+    // Column already exists
+  }
+
+  // Add payment_date to monthly_bills if not exists
+  try {
+    db.prepare("ALTER TABLE monthly_bills ADD COLUMN payment_date TEXT").run();
   } catch (e) {
     // Column already exists
   }

@@ -1,4 +1,4 @@
-import { ipcMain, app } from "electron";
+import { ipcMain, app, dialog } from "electron";
 import { getDb } from "./db";
 import fs from "fs";
 import path from "path";
@@ -123,6 +123,29 @@ ipcMain.handle("billing:getHistory", (_, month) => {
   }
 });
 
+ipcMain.handle("billing:updatePayment", (_, { billId, amountPaid, isPaid, paymentDate }) => {
+  const db = getDb();
+  return db.prepare(`
+    UPDATE monthly_bills 
+    SET amount_paid = ?, is_paid = ?, payment_date = ? 
+    WHERE id = ?
+  `).run(amountPaid, isPaid, paymentDate, billId);
+});
+
+ipcMain.handle("billing:getLatestDues", () => {
+  const db = getDb();
+  return db.prepare(`
+    SELECT renter_id, total_bill, amount_paid, is_paid, month 
+    FROM monthly_bills 
+    WHERE id IN (
+      SELECT MAX(id) 
+      FROM monthly_bills 
+      GROUP BY renter_id
+    )
+  `).all();
+});
+
+
 // Analytics
 ipcMain.handle("analytics:getSummary", () => {
   const db = getDb();
@@ -163,4 +186,22 @@ ipcMain.handle("billing:getFontData", async () => {
   
   console.error("Font not found at:", fontPath);
   return null;
+});
+
+// Save HTML File Handler
+ipcMain.handle("billing:saveHTML", async (_, { htmlContent, filename }) => {
+  try {
+    const { filePath } = await dialog.showSaveDialog({
+      defaultPath: filename,
+      filters: [{ name: "HTML Files", extensions: ["html"] }]
+    });
+    if (filePath) {
+      fs.writeFileSync(filePath, htmlContent, "utf-8");
+      return { success: true, filePath };
+    }
+    return { success: false, reason: "cancelled" };
+  } catch (err) {
+    console.error("Failed to save HTML file:", err);
+    return { success: false, error: err.message };
+  }
 });

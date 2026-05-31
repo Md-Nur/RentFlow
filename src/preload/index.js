@@ -11,6 +11,9 @@ const api = {
     // Billing
     saveBills: (data) => ipcRenderer.invoke("billing:saveBills", data),
     getBillingHistory: (month) => ipcRenderer.invoke("billing:getHistory", month),
+    saveHTML: (data) => ipcRenderer.invoke("billing:saveHTML", data),
+    updatePaymentStatus: (data) => ipcRenderer.invoke("billing:updatePayment", data),
+    getLatestDues: () => ipcRenderer.invoke("billing:getLatestDues"),
 
     // Analytics
     getSummary: () => ipcRenderer.invoke("analytics:getSummary"),
