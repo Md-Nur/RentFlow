@@ -12,10 +12,10 @@
         "dev": "electron-vite dev",
         "build": "electron-vite build",
         "postinstall": "electron-builder install-app-deps",
-        "build:unpack": "npm run build && electron-builder --dir",
-        "build:win": "npm run build && electron-builder --win",
-        "build:mac": "npm run build && electron-builder --mac",
-        "build:linux": "npm run build && electron-builder --linux"
+        "build:unpack": "bun run build && electron-builder --dir",
+        "build:win": "bun run build && electron-builder --win",
+        "build:mac": "bun run build && electron-builder --mac",
+        "build:linux": "bun run build && electron-builder --linux"
     },
     "dependencies": {
         "@lucide/lab": "^0.1.2",
@@ -48,5 +48,48 @@
         "prettier": "^3.2.5",
         "tailwindcss": "^3.4.3",
         "vite": "^5.2.12"
+    },
+    "build": {
+        "appId": "com.mollaneer.rentflow",
+        "productName": "মোল্লা নীড়",
+        "directories": {
+            "output": "dist",
+            "buildResources": "resources"
+        },
+        "files": [
+            "out/**/*"
+        ],
+        "extraResources": [
+            {
+                "from": "resources",
+                "to": "resources",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ],
+        "win": {
+            "icon": "resources/icon.ico",
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ]
+        },
+        "mac": {
+            "icon": "resources/icon.icns",
+            "target": [
+                "dmg"
+            ]
+        },
+        "linux": {
+            "icon": "resources/icon.png",
+            "target": [
+                "AppImage"
+            ]
+        }
     }
 }
