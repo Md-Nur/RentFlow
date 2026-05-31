@@ -1,7 +1,6 @@
 import React from "react";
 
 const ReceiptTemplate = ({ bill, compact = false }) => {
-    // Utility to format month if it's in YYYY-MM format
     const formatMonth = (m) => {
         if (!m) return "";
         const [year, month] = m.split("-");
@@ -9,105 +8,109 @@ const ReceiptTemplate = ({ bill, compact = false }) => {
         return `${months[parseInt(month) - 1]} ${year}`;
     };
 
-    const isPaid = (bill.amount_paid || 0) >= (bill.total_bill || 0);
-    const isPartial = (bill.amount_paid || 0) > 0 && (bill.amount_paid || 0) < (bill.total_bill || 0);
-    const remaining = Math.max(0, (bill.total_bill || 0) - (bill.amount_paid || 0));
+
+
+    const rows = [
+        { label: `বিদ্যুৎ বিল (${bill.previous_reading || 0}→${bill.current_reading || 0}=${bill.units_used || 0} ইউনিট)`, val: bill.electricity_bill },
+        { label: "মাসিক ভাড়া",   val: bill.monthly_rent },
+        { label: "টয়লেট খরচ",   val: bill.toilet_fee },
+        { label: "ময়লা বিল",     val: bill.garbage_bill },
+        { label: "রান্নাঘর বিল",  val: bill.kitchen_bill },
+        { label: "সার্ভিস চার্জ", val: bill.service_charge },
+        { label: "বকেয়া (আগের)", val: bill.previous_due },
+    ];
+
+    const pad = compact ? "px-4 py-1" : "px-4 py-2";
 
     return (
-        <div className={`bg-white text-slate-900 printable-receipt relative overflow-hidden ${compact ? "p-6 border-b border-dashed border-slate-300 last:border-0" : "p-12"}`}>
-            
-            {/* Status Watermark Stamp */}
-            <div className={`absolute pointer-events-none select-none ${compact ? "right-4 top-2 scale-75" : "right-12 top-8"}`}>
-                {isPaid ? (
-                    <div className="border-4 border-double border-emerald-500/25 text-emerald-500/30 dark:border-emerald-500/20 dark:text-emerald-500/20 font-black uppercase text-xl tracking-widest px-4 py-1.5 rounded-2xl rotate-12 transform shadow-sm">
-                        PAID / পরিশোধিত
-                    </div>
-                ) : isPartial ? (
-                    <div className="border-4 border-double border-amber-500/25 text-amber-500/30 dark:border-amber-500/20 dark:text-amber-500/20 font-black uppercase text-lg tracking-widest px-3 py-1 rounded-2xl rotate-12 transform shadow-sm">
-                        PARTIAL / আংশিক
-                    </div>
-                ) : (
-                    <div className="border-4 border-double border-rose-500/25 text-rose-500/30 dark:border-rose-500/20 dark:text-rose-500/20 font-black uppercase text-xl tracking-widest px-4 py-1.5 rounded-2xl rotate-12 transform shadow-sm">
-                        DUE / বকেয়া
-                    </div>
-                )}
+        <div
+            className={`bg-white text-black printable-receipt ${compact ? "p-4 border-b border-dashed border-gray-400 last:border-0" : "p-8"}`}
+            style={{ fontFamily: "Arial, sans-serif" }}
+        >
+            {/* ── Header: text only, no fills ── */}
+            <div className={`text-center ${compact ? "mb-3" : "mb-5"}`}>
+                <div className={`font-black tracking-tight ${compact ? "text-xl" : "text-3xl"}`}>মোল্লা নীড়</div>
+                <div className={`font-semibold tracking-widest ${compact ? "text-xs" : "text-sm"} mt-0.5`}>মাসিক ভাড়ার রশিদ</div>
+                <div style={{ borderBottom: "1.5px solid black", marginTop: "4px" }} />
             </div>
 
-            <div className={`text-center ${compact ? "mb-4" : "mb-10"}`}>
-                <h1 className={`${compact ? "text-2xl" : "text-4xl"} font-black text-indigo-600 tracking-tight uppercase`}>RentFlow</h1>
-                <p className="text-slate-500 uppercase tracking-widest text-sm mt-1 font-bold">মাসিক ভাড়ার রশিদ</p>
-            </div>
-
-            <div className={`flex justify-between items-start ${compact ? "mb-4" : "mb-8"}`}>
+            {/* ── Renter / Month info ── */}
+            <div className={`flex justify-between ${compact ? "mb-3 text-sm" : "mb-4 text-base"}`}>
                 <div>
-                    <p className="text-sm text-slate-400 uppercase font-bold">ভাড়াটিয়া</p>
-                    <h3 className={`${compact ? "text-xl" : "text-2xl"} font-bold`}>{bill.name}</h3>
-                    <p className="text-slate-600">রুম নং: {bill.room_number}</p>
+                    <div className="text-xs" style={{ color: "#555" }}>ভাড়াটিয়া</div>
+                    <div className="font-bold">{bill.name}</div>
+                    <div className="text-xs">রুম নং: {bill.room_number}</div>
                 </div>
                 <div className="text-right">
-                    <p className="text-sm text-slate-400 uppercase font-bold">মাস</p>
-                    <h3 className={`${compact ? "text-lg" : "text-xl"} font-bold`}>{formatMonth(bill.month)}</h3>
-                    <p className="text-slate-600 italic">রশিদ নং: #{bill.id}</p>
+                    <div className="text-xs" style={{ color: "#555" }}>মাস / রশিদ নং</div>
+                    <div className="font-bold">{formatMonth(bill.month)}</div>
+                    <div className="text-xs">#{bill.id}</div>
                 </div>
             </div>
 
-            <div className={`border border-slate-200 rounded-2xl overflow-hidden ${compact ? "mb-4" : "mb-8"}`}>
-                <div className="bg-slate-50 p-4 border-b border-slate-200 grid grid-cols-2">
-                    <span className="font-bold text-slate-700">বিবরণ</span>
-                    <span className="font-bold text-slate-700 text-right">টাকা</span>
+            {/* ── Bill rows: thin lines only, no fills ── */}
+            <div style={{ border: "1px solid #000" }}>
+                {/* Column header */}
+                <div
+                    className="flex justify-between font-bold text-sm"
+                    style={{ borderBottom: "1px solid #000", padding: "4px 10px" }}
+                >
+                    <span>বিবরণ</span>
+                    <span>টাকা</span>
                 </div>
-                <div className="p-4 space-y-3">
-                    <div className="grid grid-cols-2 text-sm">
-                        <span className="text-slate-600">বিদ্যুৎ বিল ({bill.previous_reading || 0} - {bill.current_reading || 0}) = {bill.units_used || 0} ইউনিট</span>
-                        <span className="text-right font-medium text-lg">৳{(bill.electricity_bill || 0).toLocaleString()}</span>
+
+                {/* Line items */}
+                {rows.map((row, i) => (
+                    <div
+                        key={i}
+                        className="flex justify-between text-sm"
+                        style={{ borderBottom: "1px solid #ddd", padding: "4px 10px" }}
+                    >
+                        <span>{row.label}</span>
+                        <span>৳{(row.val || 0).toLocaleString()}</span>
                     </div>
-                    <div className="grid grid-cols-2 text-sm">
-                        <span className="text-slate-600">মাসিক ভাড়া</span>
-                        <span className="text-right font-medium text-lg">৳{(bill.monthly_rent || 0).toLocaleString()}</span>
+                ))}
+
+                {/* Paid amount */}
+                {bill.amount_paid > 0 && (
+                    <div
+                        className="flex justify-between text-sm"
+                        style={{ borderBottom: "1px solid #bbb", padding: "4px 10px", borderTop: "1px dashed #999" }}
+                    >
+                        <span>জমা</span>
+                        <span>৳{(bill.amount_paid || 0).toLocaleString()}</span>
                     </div>
-                    <div className="grid grid-cols-2 text-sm">
-                        <span className="text-slate-600">টয়লেট খরচ</span>
-                        <span className="text-right font-medium text-lg">৳{(bill.toilet_fee || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="grid grid-cols-2 text-sm">
-                        <span className="text-slate-600">ময়লা বিল</span>
-                        <span className="text-right font-medium text-lg">৳{(bill.garbage_bill || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="grid grid-cols-2 text-sm">
-                        <span className="text-slate-600">রান্নাঘর বিল</span>
-                        <span className="text-right font-medium text-lg">৳{(bill.kitchen_bill || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="grid grid-cols-2 text-sm">
-                        <span className="text-slate-600">সার্ভিস চার্জ</span>
-                        <span className="text-right font-medium text-lg">৳{(bill.service_charge || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="grid grid-cols-2 text-sm border-t border-slate-100 pt-3">
-                        <span className="text-slate-400">বকেয়া (গত মাসের)</span>
-                        <span className="text-right font-medium text-slate-400">৳{(bill.previous_due || 0).toLocaleString()}</span>
-                    </div>
-                    {bill.amount_paid > 0 && (
-                        <>
-                            <div className="grid grid-cols-2 text-sm border-t border-slate-200/60 pt-3 text-emerald-600 font-semibold">
-                                <span>জমা (Paid Amount)</span>
-                                <span className="text-right text-lg">৳{(bill.amount_paid || 0).toLocaleString()}</span>
-                            </div>
-                            {remaining > 0 && (
-                                <div className="grid grid-cols-2 text-sm text-rose-500 font-semibold">
-                                    <span>বকেয়া (Remaining Due)</span>
-                                    <span className="text-right text-lg">৳{remaining.toLocaleString()}</span>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-                <div className="bg-indigo-600 p-6 grid grid-cols-2 text-white">
-                    <span className="text-lg font-bold">সর্বমোট পাওনা</span>
-                    <span className="text-2xl font-black text-right">৳{(bill.total_bill || 0).toLocaleString()}</span>
+                )}
+
+
+
+                {/* Total — double top border, bold, no fill */}
+                <div
+                    className="flex justify-between font-black"
+                    style={{
+                        borderTop: "3px double #000",
+                        padding: "6px 10px",
+                        fontSize: compact ? "1rem" : "1.1rem",
+                    }}
+                >
+                    <span>সর্বমোট পাওনা</span>
+                    <span>৳{(bill.total_bill || 0).toLocaleString()}</span>
                 </div>
             </div>
 
-            <div className={`text-center text-xs text-slate-400 italic border-t border-slate-100 ${compact ? "mt-4 pt-2" : "mt-8 pt-4"}`}>
-                ইনভয়েস ইস্যু করার ৭ দিনের মধ্যে ভাড়া পরিশোধ করুন। এই রশিদটি আপনার রেকর্ডের জন্য সংগ্রহে রাখুন।
+
+
+            {/* ── Footer ── */}
+            <div
+                className="text-center text-xs"
+                style={{
+                    color: "#777",
+                    borderTop: "1px dashed #bbb",
+                    marginTop: compact ? "6px" : "10px",
+                    paddingTop: "4px",
+                }}
+            >
+                ইনভয়েস ইস্যু করার ৭ দিনের মধ্যে ভাড়া পরিশোধ করুন।
             </div>
         </div>
     );

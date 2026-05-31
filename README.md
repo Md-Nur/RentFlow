@@ -1,4 +1,4 @@
-# RentFlow
+# মোল্লা নীড়
 
 A modern desktop application for managing renters and calculating monthly bills.
 
@@ -40,6 +40,7 @@ A modern desktop application for managing renters and calculating monthly bills.
 ### Development
 
 Run the application in development mode:
+
 ```bash
 npm run dev
 ```
@@ -47,6 +48,7 @@ npm run dev
 ### Building for Production
 
 To package the application for Windows:
+
 ```bash
 npm run build:win
 ```

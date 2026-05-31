@@ -21,7 +21,7 @@ const api = {
     // Utils
     getFontData: () => ipcRenderer.invoke("billing:getFontData"),
     exportData: () => ipcRenderer.invoke("db:exportData"),
-    importData: () => ipcRenderer.invoke("db:importData")
+    importData: (jsonData) => ipcRenderer.invoke("db:importData", jsonData)
 };
 
 if (process.contextIsolated) {

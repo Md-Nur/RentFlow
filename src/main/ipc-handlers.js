@@ -24,7 +24,7 @@ ipcMain.handle("renters:add", (_, renter) => {
     renter.kitchen_bill || 0,
     renter.service_charge || 0,
     renter.electricity_rate || 0,
-    renter.previous_reading || 0
+    renter.previous_reading || 0,
   );
   return info.lastInsertRowid;
 });
@@ -54,7 +54,7 @@ ipcMain.handle("renters:update", (_, renter) => {
     renter.service_charge,
     renter.electricity_rate,
     renter.previous_reading,
-    renter.id
+    renter.id,
   );
 });
 
@@ -94,7 +94,7 @@ ipcMain.handle("billing:saveBills", (_, { bills, month }) => {
         bill.kitchen_bill,
         bill.service_charge,
         bill.previous_due,
-        bill.total_bill
+        bill.total_bill,
       );
       // Update the renter's "previous_reading" to the new "current_reading" for next month
       updateRenterReading.run(bill.current_reading, bill.renter_id);
@@ -107,34 +107,51 @@ ipcMain.handle("billing:saveBills", (_, { bills, month }) => {
 ipcMain.handle("billing:getHistory", (_, month) => {
   const db = getDb();
   if (month) {
-    return db.prepare(`
+    return db
+      .prepare(
+        `
       SELECT b.*, r.name, r.room_number 
       FROM monthly_bills b
       JOIN renters r ON b.renter_id = r.id
       WHERE b.month = ?
-    `).all(month);
+    `,
+      )
+      .all(month);
   } else {
-    return db.prepare(`
+    return db
+      .prepare(
+        `
       SELECT b.*, r.name, r.room_number 
       FROM monthly_bills b
       JOIN renters r ON b.renter_id = r.id
       ORDER BY b.month DESC, r.room_number ASC
-    `).all();
+    `,
+      )
+      .all();
   }
 });
 
-ipcMain.handle("billing:updatePayment", (_, { billId, amountPaid, isPaid, paymentDate }) => {
-  const db = getDb();
-  return db.prepare(`
+ipcMain.handle(
+  "billing:updatePayment",
+  (_, { billId, amountPaid, isPaid, paymentDate }) => {
+    const db = getDb();
+    return db
+      .prepare(
+        `
     UPDATE monthly_bills 
     SET amount_paid = ?, is_paid = ?, payment_date = ? 
     WHERE id = ?
-  `).run(amountPaid, isPaid, paymentDate, billId);
-});
+  `,
+      )
+      .run(amountPaid, isPaid, paymentDate, billId);
+  },
+);
 
 ipcMain.handle("billing:getLatestDues", () => {
   const db = getDb();
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT renter_id, total_bill, amount_paid, is_paid, month 
     FROM monthly_bills 
     WHERE id IN (
@@ -142,25 +159,32 @@ ipcMain.handle("billing:getLatestDues", () => {
       FROM monthly_bills 
       GROUP BY renter_id
     )
-  `).all();
+  `,
+    )
+    .all();
 });
-
 
 // Analytics
 ipcMain.handle("analytics:getSummary", () => {
   const db = getDb();
-  const totalRenters = db.prepare("SELECT COUNT(*) as count FROM renters").get().count;
-  const monthlyIncome = db.prepare(`
+  const totalRenters = db
+    .prepare("SELECT COUNT(*) as count FROM renters")
+    .get().count;
+  const monthlyIncome = db
+    .prepare(
+      `
     SELECT month, SUM(total_bill) as total 
     FROM monthly_bills 
     GROUP BY month 
     ORDER BY month DESC 
     LIMIT 6
-  `).all();
+  `,
+    )
+    .all();
 
   return {
     totalRenters,
-    monthlyIncome: monthlyIncome.reverse()
+    monthlyIncome: monthlyIncome.reverse(),
   };
 });
 
@@ -183,7 +207,7 @@ ipcMain.handle("billing:getFontData", async () => {
   if (fs.existsSync(fontPath)) {
     return fs.readFileSync(fontPath).toString("base64");
   }
-  
+
   console.error("Font not found at:", fontPath);
   return null;
 });
@@ -193,7 +217,7 @@ ipcMain.handle("billing:saveHTML", async (_, { htmlContent, filename }) => {
   try {
     const { filePath } = await dialog.showSaveDialog({
       defaultPath: filename,
-      filters: [{ name: "HTML Files", extensions: ["html"] }]
+      filters: [{ name: "HTML Files", extensions: ["html"] }],
     });
     if (filePath) {
       fs.writeFileSync(filePath, htmlContent, "utf-8");
@@ -210,8 +234,8 @@ ipcMain.handle("billing:saveHTML", async (_, { htmlContent, filename }) => {
 ipcMain.handle("db:exportData", async () => {
   try {
     const { filePath } = await dialog.showSaveDialog({
-      defaultPath: `RentFlow_Backup_${new Date().toISOString().slice(0, 10)}.json`,
-      filters: [{ name: "JSON Files", extensions: ["json"] }]
+      defaultPath: `মোল্লা নীড়_Backup_${new Date().toISOString().slice(0, 10)}.json`,
+      filters: [{ name: "JSON Files", extensions: ["json"] }],
     });
 
     if (!filePath) return { success: false, reason: "cancelled" };
@@ -223,7 +247,7 @@ ipcMain.handle("db:exportData", async () => {
     const data = {
       version: "1.0",
       renters,
-      monthly_bills: bills
+      monthly_bills: bills,
     };
 
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
@@ -239,27 +263,32 @@ ipcMain.handle("db:importData", async () => {
   try {
     const { filePaths } = await dialog.showOpenDialog({
       properties: ["openFile"],
-      filters: [{ name: "JSON Files", extensions: ["json"] }]
+      filters: [{ name: "JSON Files", extensions: ["json"] }],
     });
 
-    if (!filePaths || filePaths.length === 0) return { success: false, reason: "cancelled" };
+    if (!filePaths || filePaths.length === 0)
+      return { success: false, reason: "cancelled" };
 
     const filePath = filePaths[0];
     const content = fs.readFileSync(filePath, "utf-8");
     const data = JSON.parse(content);
 
     if (!data.renters || !data.monthly_bills) {
-      throw new Error("Invalid backup file format. Missing renters or monthly_bills data.");
+      throw new Error(
+        "Invalid backup file format. Missing renters or monthly_bills data.",
+      );
     }
 
     const db = getDb();
-    
+
     // Perform import inside a transaction for complete safety
     const transaction = db.transaction(() => {
       // 1. Fetch current renters to map room_number -> id
-      const currentRentersList = db.prepare("SELECT id, room_number FROM renters").all();
+      const currentRentersList = db
+        .prepare("SELECT id, room_number FROM renters")
+        .all();
       const roomToIdMap = {};
-      currentRentersList.forEach(r => {
+      currentRentersList.forEach((r) => {
         roomToIdMap[r.room_number] = r.id;
       });
 
@@ -296,7 +325,7 @@ ipcMain.handle("db:importData", async () => {
             renter.service_charge || 0,
             renter.electricity_rate || 0,
             renter.previous_reading || 0,
-            existingId
+            existingId,
           );
           renterIdMap[renter.id] = existingId;
         } else {
@@ -310,16 +339,18 @@ ipcMain.handle("db:importData", async () => {
             renter.kitchen_bill || 0,
             renter.service_charge || 0,
             renter.electricity_rate || 0,
-            renter.previous_reading || 0
+            renter.previous_reading || 0,
           );
           renterIdMap[renter.id] = info.lastInsertRowid;
         }
       }
 
       // 2. Fetch current bills to check duplicates (renter_id + month)
-      const currentBills = db.prepare("SELECT id, renter_id, month FROM monthly_bills").all();
+      const currentBills = db
+        .prepare("SELECT id, renter_id, month FROM monthly_bills")
+        .all();
       const billDuplicateMap = {}; // "renterId_month" -> bill_id
-      currentBills.forEach(b => {
+      currentBills.forEach((b) => {
         billDuplicateMap[`${b.renter_id}_${b.month}`] = b.id;
       });
 
@@ -354,7 +385,9 @@ ipcMain.handle("db:importData", async () => {
       for (const bill of data.monthly_bills) {
         const localRenterId = renterIdMap[bill.renter_id];
         if (!localRenterId) {
-          console.warn(`Skipping bill id ${bill.id} because renter ID ${bill.renter_id} could not be mapped.`);
+          console.warn(
+            `Skipping bill id ${bill.id} because renter ID ${bill.renter_id} could not be mapped.`,
+          );
           continue;
         }
 
@@ -379,7 +412,7 @@ ipcMain.handle("db:importData", async () => {
             bill.is_paid || 0,
             bill.amount_paid || 0,
             bill.payment_date,
-            existingBillId
+            existingBillId,
           );
         } else {
           // Bill doesn't exist. Insert it.
@@ -400,7 +433,7 @@ ipcMain.handle("db:importData", async () => {
             bill.total_bill,
             bill.is_paid || 0,
             bill.amount_paid || 0,
-            bill.payment_date
+            bill.payment_date,
           );
         }
       }
@@ -413,4 +446,3 @@ ipcMain.handle("db:importData", async () => {
     return { success: false, error: err.message };
   }
 });
-
