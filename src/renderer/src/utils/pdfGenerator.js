@@ -101,6 +101,29 @@ export const generateReceiptPDF_v11 = async (bills, filename = "Receipts.pdf") =
             doc.setTextColor(100);
             safeText(`রশিদ নং: #${String(bill.id || 'N/A')}`, 190, y + 50, { align: "right" });
 
+            // Status Watermark Stamp
+            const isPaid = (bill.amount_paid || 0) >= (bill.total_bill || 0);
+            const isPartial = (bill.amount_paid || 0) > 0 && (bill.amount_paid || 0) < (bill.total_bill || 0);
+            const remaining = Math.max(0, (bill.total_bill || 0) - (bill.amount_paid || 0));
+
+            try {
+                if (isPaid) {
+                    doc.setTextColor(16, 185, 129); // Emerald-500
+                    doc.setFontSize(12);
+                    safeText("PAID / পরিশোধিত", 150, y + 25, { angle: 10 });
+                } else if (isPartial) {
+                    doc.setTextColor(245, 158, 11); // Amber-500
+                    doc.setFontSize(10);
+                    safeText("PARTIAL / আংশিক", 150, y + 25, { angle: 10 });
+                } else {
+                    doc.setTextColor(239, 68, 68); // Rose-500
+                    doc.setFontSize(12);
+                    safeText("DUE / বকেয়া", 150, y + 25, { angle: 10 });
+                }
+            } catch (err) {
+                console.warn("[PDFGen] Watermark drawing failed:", err);
+            }
+
             // Table Drawing Parameters
             let currentY = y + 65;
             const tableX = 20;
@@ -139,6 +162,31 @@ export const generateReceiptPDF_v11 = async (bills, filename = "Receipts.pdf") =
                 safeText(moneyStr, col2X, currentY + 5.5, { align: "right" });
                 currentY += rowH;
             });
+
+            // 2.5 Optional Payment rows
+            if (bill.amount_paid > 0) {
+                // Draw Paid Row
+                doc.setFillColor(240, 253, 244); // light green
+                doc.rect(tableX, currentY, tableWidth, rowH, 'F');
+                doc.setTextColor(22, 163, 74); // dark green
+                doc.setFontSize(10);
+                safeText("জমা (Paid Amount)", tableX + 5, currentY + 5.5);
+                const paidStr = `${hasCustomFont ? '৳' : 'Tk.'}${Number(bill.amount_paid || 0).toLocaleString()}`;
+                safeText(paidStr, col2X, currentY + 5.5, { align: "right" });
+                currentY += rowH;
+
+                if (remaining > 0) {
+                    // Draw Remaining Due Row
+                    doc.setFillColor(254, 242, 242); // light red
+                    doc.rect(tableX, currentY, tableWidth, rowH, 'F');
+                    doc.setTextColor(220, 38, 38); // dark red
+                    doc.setFontSize(10);
+                    safeText("বকেয়া (Remaining Due)", tableX + 5, currentY + 5.5);
+                    const remStr = `${hasCustomFont ? '৳' : 'Tk.'}${Number(remaining).toLocaleString()}`;
+                    safeText(remStr, col2X, currentY + 5.5, { align: "right" });
+                    currentY += rowH;
+                }
+            }
 
             // 3. Total Highlight Row
             doc.setFillColor(79, 70, 229);
@@ -237,6 +285,29 @@ export const generateReceiptPDF_v10 = async (bills, filename = "Receipts.pdf") =
             doc.setTextColor(100);
             doc.text(`রশিদ নং: #${String(bill.id || 'N/A')}`, 190, y + 50, { align: "right" });
 
+            // Status Watermark Stamp
+            const isPaid = (bill.amount_paid || 0) >= (bill.total_bill || 0);
+            const isPartial = (bill.amount_paid || 0) > 0 && (bill.amount_paid || 0) < (bill.total_bill || 0);
+            const remaining = Math.max(0, (bill.total_bill || 0) - (bill.amount_paid || 0));
+
+            try {
+                if (isPaid) {
+                    doc.setTextColor(16, 185, 129); // Emerald-500
+                    doc.setFontSize(12);
+                    doc.text("PAID / পরিশোধিত", 150, y + 25, { angle: 10 });
+                } else if (isPartial) {
+                    doc.setTextColor(245, 158, 11); // Amber-500
+                    doc.setFontSize(10);
+                    doc.text("PARTIAL / আংশিক", 150, y + 25, { angle: 10 });
+                } else {
+                    doc.setTextColor(239, 68, 68); // Rose-500
+                    doc.setFontSize(12);
+                    doc.text("DUE / বকেয়া", 150, y + 25, { angle: 10 });
+                }
+            } catch (err) {
+                console.warn("[PDFGen] Watermark drawing failed:", err);
+            }
+
             // Table Drawing Parameters
             let currentY = y + 65;
             const tableX = 20;
@@ -275,6 +346,31 @@ export const generateReceiptPDF_v10 = async (bills, filename = "Receipts.pdf") =
                 doc.text(moneyStr, col2X, currentY + 5.5, { align: "right" });
                 currentY += rowH;
             });
+
+            // 2.5 Optional Payment rows
+            if (bill.amount_paid > 0) {
+                // Draw Paid Row
+                doc.setFillColor(240, 253, 244); // light green
+                doc.rect(tableX, currentY, tableWidth, rowH, 'F');
+                doc.setTextColor(22, 163, 74); // dark green
+                doc.setFontSize(10);
+                doc.text("জমা (Paid Amount)", tableX + 5, currentY + 5.5);
+                const paidStr = `৳${Number(bill.amount_paid || 0).toLocaleString()}`;
+                doc.text(paidStr, col2X, currentY + 5.5, { align: "right" });
+                currentY += rowH;
+
+                if (remaining > 0) {
+                    // Draw Remaining Due Row
+                    doc.setFillColor(254, 242, 242); // light red
+                    doc.rect(tableX, currentY, tableWidth, rowH, 'F');
+                    doc.setTextColor(220, 38, 38); // dark red
+                    doc.setFontSize(10);
+                    doc.text("বকেয়া (Remaining Due)", tableX + 5, currentY + 5.5);
+                    const remStr = `৳${Number(remaining).toLocaleString()}`;
+                    doc.text(remStr, col2X, currentY + 5.5, { align: "right" });
+                    currentY += rowH;
+                }
+            }
 
             // 3. Total Highlight Row
             doc.setFillColor(79, 70, 229);

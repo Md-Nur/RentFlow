@@ -19,7 +19,9 @@ const api = {
     getSummary: () => ipcRenderer.invoke("analytics:getSummary"),
 
     // Utils
-    getFontData: () => ipcRenderer.invoke("billing:getFontData")
+    getFontData: () => ipcRenderer.invoke("billing:getFontData"),
+    exportData: () => ipcRenderer.invoke("db:exportData"),
+    importData: () => ipcRenderer.invoke("db:importData")
 };
 
 if (process.contextIsolated) {

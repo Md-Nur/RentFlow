@@ -9,8 +9,30 @@ const ReceiptTemplate = ({ bill, compact = false }) => {
         return `${months[parseInt(month) - 1]} ${year}`;
     };
 
+    const isPaid = (bill.amount_paid || 0) >= (bill.total_bill || 0);
+    const isPartial = (bill.amount_paid || 0) > 0 && (bill.amount_paid || 0) < (bill.total_bill || 0);
+    const remaining = Math.max(0, (bill.total_bill || 0) - (bill.amount_paid || 0));
+
     return (
-        <div className={`bg-white text-slate-900 printable-receipt ${compact ? "p-6 border-b border-dashed border-slate-300 last:border-0" : "p-12"}`}>
+        <div className={`bg-white text-slate-900 printable-receipt relative overflow-hidden ${compact ? "p-6 border-b border-dashed border-slate-300 last:border-0" : "p-12"}`}>
+            
+            {/* Status Watermark Stamp */}
+            <div className={`absolute pointer-events-none select-none ${compact ? "right-4 top-2 scale-75" : "right-12 top-8"}`}>
+                {isPaid ? (
+                    <div className="border-4 border-double border-emerald-500/25 text-emerald-500/30 dark:border-emerald-500/20 dark:text-emerald-500/20 font-black uppercase text-xl tracking-widest px-4 py-1.5 rounded-2xl rotate-12 transform shadow-sm">
+                        PAID / পরিশোধিত
+                    </div>
+                ) : isPartial ? (
+                    <div className="border-4 border-double border-amber-500/25 text-amber-500/30 dark:border-amber-500/20 dark:text-amber-500/20 font-black uppercase text-lg tracking-widest px-3 py-1 rounded-2xl rotate-12 transform shadow-sm">
+                        PARTIAL / আংশিক
+                    </div>
+                ) : (
+                    <div className="border-4 border-double border-rose-500/25 text-rose-500/30 dark:border-rose-500/20 dark:text-rose-500/20 font-black uppercase text-xl tracking-widest px-4 py-1.5 rounded-2xl rotate-12 transform shadow-sm">
+                        DUE / বকেয়া
+                    </div>
+                )}
+            </div>
+
             <div className={`text-center ${compact ? "mb-4" : "mb-10"}`}>
                 <h1 className={`${compact ? "text-2xl" : "text-4xl"} font-black text-indigo-600 tracking-tight uppercase`}>RentFlow</h1>
                 <p className="text-slate-500 uppercase tracking-widest text-sm mt-1 font-bold">মাসিক ভাড়ার রশিদ</p>
@@ -63,6 +85,20 @@ const ReceiptTemplate = ({ bill, compact = false }) => {
                         <span className="text-slate-400">বকেয়া (গত মাসের)</span>
                         <span className="text-right font-medium text-slate-400">৳{(bill.previous_due || 0).toLocaleString()}</span>
                     </div>
+                    {bill.amount_paid > 0 && (
+                        <>
+                            <div className="grid grid-cols-2 text-sm border-t border-slate-200/60 pt-3 text-emerald-600 font-semibold">
+                                <span>জমা (Paid Amount)</span>
+                                <span className="text-right text-lg">৳{(bill.amount_paid || 0).toLocaleString()}</span>
+                            </div>
+                            {remaining > 0 && (
+                                <div className="grid grid-cols-2 text-sm text-rose-500 font-semibold">
+                                    <span>বকেয়া (Remaining Due)</span>
+                                    <span className="text-right text-lg">৳{remaining.toLocaleString()}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
                 <div className="bg-indigo-600 p-6 grid grid-cols-2 text-white">
                     <span className="text-lg font-bold">সর্বমোট পাওনা</span>

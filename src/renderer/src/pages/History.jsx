@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Printer, FileText, Download } from "lucide-react";
+import { Search, Printer, FileText, Download, Coins } from "lucide-react";
 import ReceiptModal from "../components/ReceiptModal";
 import ReceiptTemplate from "../components/ReceiptTemplate";
+import RecordPaymentModal from "../components/RecordPaymentModal";
 import { generateReceiptPDF_v11 } from '../utils/pdfGenerator';
 
 const History = () => {
@@ -9,6 +10,7 @@ const History = () => {
     const [month, setMonth] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedBill, setSelectedBill] = useState(null);
+    const [paymentBill, setPaymentBill] = useState(null);
 
     const fetchHistory = async () => {
         const data = await window.api.getBillingHistory(month || null);
@@ -107,35 +109,89 @@ const History = () => {
                             <th className="px-6 py-4 font-semibold text-sm">Room</th>
                             <th className="px-6 py-4 font-semibold text-sm">Name</th>
                             <th className="px-6 py-4 font-semibold text-sm text-right">Total Bill</th>
-                            <th className="px-6 py-4 font-semibold text-sm text-center">Receipt</th>
+                            <th className="px-6 py-4 font-semibold text-sm text-right">Amount Paid</th>
+                            <th className="px-6 py-4 font-semibold text-sm text-center">Payment Status</th>
+                            <th className="px-6 py-4 font-semibold text-sm text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {filteredHistory.map((bill) => (
-                            <tr key={bill.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                                <td className="px-6 py-4 font-medium">{bill.month}</td>
-                                <td className="px-6 py-4">{bill.room_number}</td>
-                                <td className="px-6 py-4 font-medium">{bill.name}</td>
-                                <td className="px-6 py-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
-                                    ৳{(bill.total_bill || 0).toLocaleString()}
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <button
-                                        onClick={() => setSelectedBill(bill)}
-                                        className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
-                                        title="View Receipt"
-                                    >
-                                        <FileText size={20} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {filteredHistory.map((bill) => {
+                            const isPaid = (bill.amount_paid || 0) >= (bill.total_bill || 0);
+                            const isPartial = (bill.amount_paid || 0) > 0 && (bill.amount_paid || 0) < (bill.total_bill || 0);
+                            const remaining = Math.max(0, (bill.total_bill || 0) - (bill.amount_paid || 0));
+
+                            return (
+                                <tr key={bill.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                                    <td className="px-6 py-4 font-medium">{bill.month}</td>
+                                    <td className="px-6 py-4">{bill.room_number}</td>
+                                    <td className="px-6 py-4 font-medium">{bill.name}</td>
+                                    <td className="px-6 py-4 text-right font-bold text-slate-700 dark:text-slate-300">
+                                        ৳{(bill.total_bill || 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                                        ৳{(bill.amount_paid || 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        {isPaid ? (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
+                                                Paid
+                                            </span>
+                                        ) : isPartial ? (
+                                            <span 
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30"
+                                                title={`Due: ৳${remaining.toLocaleString()}`}
+                                            >
+                                                Partial (Due: ৳{remaining.toLocaleString()})
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30">
+                                                Unpaid
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <button
+                                                onClick={() => setPaymentBill(bill)}
+                                                className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
+                                                    isPaid 
+                                                        ? "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700" 
+                                                        : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/10"
+                                                }`}
+                                                title="Record or update payment"
+                                            >
+                                                <Coins size={14} />
+                                                <span>{isPaid ? "Paid Details" : "Record Pay"}</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedBill(bill)}
+                                                className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+                                                title="View Receipt"
+                                            >
+                                                <FileText size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
 
             {selectedBill && (
                 <ReceiptModal bill={selectedBill} onClose={() => setSelectedBill(null)} />
+            )}
+
+            {paymentBill && (
+                <RecordPaymentModal 
+                    bill={paymentBill} 
+                    onClose={() => setPaymentBill(null)} 
+                    onSave={() => {
+                        setPaymentBill(null);
+                        fetchHistory();
+                    }} 
+                />
             )}
         </div>
     );

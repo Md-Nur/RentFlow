@@ -16,12 +16,26 @@ const MonthlyBilling = () => {
         const fetchRenters = async () => {
             const data = await window.api.getAllRenters();
             setRenters(data);
+
+            // Fetch latest billing history to compute outstanding dues
+            let duesMap = {};
+            try {
+                const latestDues = await window.api.getLatestDues();
+                latestDues.forEach(d => {
+                    // due is total_bill minus what they have paid
+                    const remainingDue = Math.max(0, (d.total_bill || 0) - (d.amount_paid || 0));
+                    duesMap[d.renter_id] = remainingDue;
+                });
+            } catch (err) {
+                console.error("Failed to fetch latest dues:", err);
+            }
+
             const initialReadings = {};
             const initialDues = {};
             const initialRates = {};
             data.forEach((r) => {
                 initialReadings[r.id] = r.previous_reading;
-                initialDues[r.id] = 0;
+                initialDues[r.id] = duesMap[r.id] || 0;
                 initialRates[r.id] = r.electricity_rate || 0;
             });
             setReadings(initialReadings);
