@@ -1,4 +1,4 @@
-import { ipcMain, app, dialog } from "electron";
+import { ipcMain, app, dialog, shell } from "electron";
 import { getDb } from "./db";
 import fs from "fs";
 import path from "path";
@@ -221,6 +221,7 @@ ipcMain.handle("billing:saveHTML", async (_, { htmlContent, filename }) => {
     });
     if (filePath) {
       fs.writeFileSync(filePath, htmlContent, "utf-8");
+      shell.openPath(filePath);
       return { success: true, filePath };
     }
     return { success: false, reason: "cancelled" };
